@@ -1,6 +1,6 @@
 ## Setup
 
-1. Create a new conda environement
+1. Create a new conda environment
 
     `conda create -n magnetism python=3.11.0`
 
