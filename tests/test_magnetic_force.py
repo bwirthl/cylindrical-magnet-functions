@@ -13,7 +13,7 @@ def test_magnetic_force_1(magnetic_parameters_base):
     Z = 4.0
     result = evaluate_magnetic_force(X, Y, Z, magnetic_parameters_base)
 
-    assert result[0] == pytest.approx(-0.04581864194950962, 1e-14)
+    assert result[0] == pytest.approx(-0.018327456779803845, 1e-14)
     assert result[1] == pytest.approx(0, 1e-14)
     assert result[2] == pytest.approx(-0.019705863530383092, 1e-14)
 
@@ -26,7 +26,7 @@ def test_magnetic_force_2(magnetic_parameters_base):
     result = evaluate_magnetic_force(X, Y, Z, magnetic_parameters_base)
 
     assert result[0] == pytest.approx(0, 1e-14)
-    assert result[1] == pytest.approx(-0.04581864194950962, 1e-14)
+    assert result[1] == pytest.approx(-0.018327456779803845, 1e-14)
     assert result[2] == pytest.approx(-0.019705863530383092, 1e-14)
 
 
@@ -37,7 +37,7 @@ def test_magnetic_force_3(magnetic_parameters_base):
     Z = 4.0
     result = evaluate_magnetic_force(X, Y, Z, magnetic_parameters_base)
 
-    assert result[0] == pytest.approx(0.04581864194950962, 1e-14)
+    assert result[0] == pytest.approx(0.018327456779803845, 1e-14)
     assert result[1] == pytest.approx(0, 1e-14)
     assert result[2] == pytest.approx(-0.019705863530383092, 1e-14)
 
@@ -49,7 +49,7 @@ def test_magnetic_force_4(magnetic_parameters_base):
     Z = -4.0
     result = evaluate_magnetic_force(X, Y, Z, magnetic_parameters_base)
 
-    assert result[0] == pytest.approx(0.04581864194950962, 1e-14)
+    assert result[0] == pytest.approx(0.018327456779803845, 1e-14)
     assert result[1] == pytest.approx(0, 1e-14)
     assert result[2] == pytest.approx(0.019705863530383092, 1e-14)
 
@@ -61,6 +61,6 @@ def test_magnetic_force_5(magnetic_parameters_base):
     Z = 2.9
     result = evaluate_magnetic_force(X, Y, Z, magnetic_parameters_base)
 
-    assert result[0] == pytest.approx(0.008422241029651797, 1e-14)
-    assert result[1] == pytest.approx(0.0067377928237214385, 1e-14)
+    assert result[0] == pytest.approx(0.0033688964118607184, 1e-14)
+    assert result[1] == pytest.approx(0.002695117129488575, 1e-14)
     assert result[2] == pytest.approx(-0.19534212681287147, 1e-14)

@@ -1,7 +1,9 @@
 import numpy as np
 
-from magnetism.coordinate_transformation import (transform_coordinates_forward,
-                                                 transform_vector_backward)
+from magnetism.coordinate_transformation import (
+    transform_coordinates_forward,
+    transform_vector_backward,
+)
 from magnetism.elliptic_integrals import EllipticE, EllipticK, EllipticPi
 
 
@@ -77,7 +79,6 @@ def evaluate_magnetic_force(x, y, z, magnetic_parameters):
         * magnetic_parameters["magnetization"] ** 2
         * magnetic_parameters["magnetic_permeability"]
         * volume_particle
-        * R
         * (
             rho**2
             * Q_2
