@@ -1,8 +1,9 @@
 import numpy as np
 import pytest
-
-from magnetism.coordinate_transformation import (transform_coordinates_forward,
-                                                 transform_vector_backward)
+from magnetism.coordinate_transformation import (
+    transform_coordinates_forward,
+    transform_vector_backward,
+)
 
 
 def test_coordinate_transformation_1():
@@ -20,7 +21,7 @@ def test_coordinate_transformation_1():
     rho, phi, z = transform_coordinates_forward(X, Y, Z, params)
 
     # avoid the singularity at rho = 0
-    assert rho == pytest.approx(1e-6, 1e-14)
+    assert rho == pytest.approx(1e-9, 1e-14)
     assert phi == pytest.approx(0, 1e-14)
     assert z == pytest.approx(0, 1e-14)
 

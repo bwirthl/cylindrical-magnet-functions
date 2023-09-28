@@ -1,9 +1,5 @@
 import pytest
-
-from magnetism.evaluate_magnetic_force import evaluate_magnetic_force
-
-# base units are: mm, s, g, A
-# 1 N = 1 kg m/s^2 = 1e6 g mm/s^2
+from magnetism.magnetic_force import evaluate_magnetic_force
 
 
 def test_magnetic_force_1(magnetic_parameters_base):
@@ -13,9 +9,9 @@ def test_magnetic_force_1(magnetic_parameters_base):
     Z = 4.0
     result = evaluate_magnetic_force(X, Y, Z, magnetic_parameters_base)
 
-    assert result[0] == pytest.approx(-0.018327456779803845, 1e-14)
+    assert result[0] == pytest.approx(-3.4546442147049736e-08, 1e-14)
     assert result[1] == pytest.approx(0, 1e-14)
-    assert result[2] == pytest.approx(-0.019705863530383092, 1e-14)
+    assert result[2] == pytest.approx(-3.714467765981674e-08, 1e-14)
 
 
 def test_magnetic_force_2(magnetic_parameters_base):
@@ -26,8 +22,8 @@ def test_magnetic_force_2(magnetic_parameters_base):
     result = evaluate_magnetic_force(X, Y, Z, magnetic_parameters_base)
 
     assert result[0] == pytest.approx(0, 1e-14)
-    assert result[1] == pytest.approx(-0.018327456779803845, 1e-14)
-    assert result[2] == pytest.approx(-0.019705863530383092, 1e-14)
+    assert result[1] == pytest.approx(-3.4546442147049736e-08, 1e-14)
+    assert result[2] == pytest.approx(-3.714467765981674e-08, 1e-14)
 
 
 def test_magnetic_force_3(magnetic_parameters_base):
@@ -37,9 +33,9 @@ def test_magnetic_force_3(magnetic_parameters_base):
     Z = 4.0
     result = evaluate_magnetic_force(X, Y, Z, magnetic_parameters_base)
 
-    assert result[0] == pytest.approx(0.018327456779803845, 1e-14)
+    assert result[0] == pytest.approx(3.4546442147049736e-08, 1e-14)
     assert result[1] == pytest.approx(0, 1e-14)
-    assert result[2] == pytest.approx(-0.019705863530383092, 1e-14)
+    assert result[2] == pytest.approx(-3.714467765981674e-08, 1e-14)
 
 
 def test_magnetic_force_4(magnetic_parameters_base):
@@ -49,9 +45,9 @@ def test_magnetic_force_4(magnetic_parameters_base):
     Z = -4.0
     result = evaluate_magnetic_force(X, Y, Z, magnetic_parameters_base)
 
-    assert result[0] == pytest.approx(0.018327456779803845, 1e-14)
+    assert result[0] == pytest.approx(3.4546442147049736e-08, 1e-14)
     assert result[1] == pytest.approx(0, 1e-14)
-    assert result[2] == pytest.approx(0.019705863530383092, 1e-14)
+    assert result[2] == pytest.approx(3.714467765981674e-08, 1e-14)
 
 
 def test_magnetic_force_5(magnetic_parameters_base):
@@ -61,6 +57,6 @@ def test_magnetic_force_5(magnetic_parameters_base):
     Z = 2.9
     result = evaluate_magnetic_force(X, Y, Z, magnetic_parameters_base)
 
-    assert result[0] == pytest.approx(0.0033688964118607184, 1e-14)
-    assert result[1] == pytest.approx(0.002695117129488575, 1e-14)
-    assert result[2] == pytest.approx(-0.19534212681287147, 1e-14)
+    assert result[0] == pytest.approx(6.350220130923992e-09, 1e-14)
+    assert result[1] == pytest.approx(5.080176104739194e-09, 1e-14)
+    assert result[2] == pytest.approx(-3.682112343191538e-07, 1e-14)

@@ -5,31 +5,35 @@ import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 import magnetism.plot_settings as plts
-from magnetism.evaluate_magnetic_field import evaluate_magnetic_field
-from magnetism.evaluate_magnetic_force import evaluate_magnetic_force
-from magnetism.plot_settings import get_path
+from magnetism.coordinate_transformation import get_rectangle_path_xz
+from magnetism.magnetic_field import evaluate_magnetic_field
+from magnetism.magnetic_force import evaluate_magnetic_force
 
 plts.set_params()
 
 matplotlib.font_manager.findSystemFonts(fontpaths=None, fontext="ttf")
+plt.rcParams["font.sans-serif"] = "Noto Sans"
 
 resolution = 51
 x, z = np.meshgrid(
-    np.linspace(-7, 7, resolution), np.linspace(-7, 7, resolution), indexing="ij"
-)  # mm
+    np.linspace(-7e-3, 7e-3, resolution),
+    np.linspace(-7e-3, 7e-3, resolution),
+    indexing="ij",
+)  # m
 
 magnetic_parameters = {
-    "radius_magnet": 2.0,
-    "length": 7.0,
-    "x_position": 0.0,
-    "y_position": 0.0,
-    "z_position": 0.0,
-    "magnetic_permeability": 1.25663706212,
-    "magnetization": 1e3,
-    "dynamic_viscosity_fluid": 0.001,
-    "radius_particle": 100e-6,
+    "radius_magnet": 2.0e-3,  # m
+    "length": 7.0e-3,  # m
+    "x_position": 0.0,  # m
+    "y_position": 0.0,  # m
+    "z_position": 0.0,  # m
+    "magnetic_permeability": 1.25663706212e-6,  # N/A^2
+    "magnetization": 1.05e6,  # A/m
+    "dynamic_viscosity_fluid": 0.001,  # Pa s
+    "radius_particle": 100e-9,  # m
     "rotation_x": 0,
     "rotation_y": 0,
+    "magnetisation_model": "constant",
 }
 
 F_x = np.empty((resolution, resolution))
@@ -45,6 +49,18 @@ for i in range(resolution):
         F_x[i, k], _, F_z[i, k] = evaluate_magnetic_force(
             x[i, k], 0, z[i, k], magnetic_parameters
         )
+
+# Force: N -> pN
+F_x = F_x * 1e12
+F_z = F_z * 1e12
+
+# H field: A/m -> kA/m = A/mm
+H_x = H_x * 1e-3
+H_z = H_z * 1e-3
+
+# Position: m -> mm
+x = x * 1e3
+z = z * 1e3
 
 force_magnitude = np.sqrt(F_x**2 + F_z**2)
 field_magnitude = np.sqrt(H_x**2 + H_z**2)
@@ -81,13 +97,13 @@ contour_field = ax2.contourf(
 divider1 = make_axes_locatable(ax1)
 cax1 = divider1.append_axes("right", size="5%", pad=0.08)
 cbar_force = fig1.colorbar(contour_force, ax=ax1, cax=cax1)
-cbar_force.set_label("Magnetic force (μN)")
+cbar_force.set_label("Magnetic force (pN)")
 cbar_force.set_ticks([0, 1])
 
 divider2 = make_axes_locatable(ax2)
 cax2 = divider2.append_axes("right", size="5%", pad=0.08)
 cbar_field = fig2.colorbar(contour_field, ax=ax2, cax=cax2)
-cbar_field.set_label("Magnetic field H (A/mm)")
+cbar_field.set_label("Magnetic field H (kA/m)")
 cbar_field.set_ticks([0, 500])
 
 ax1.streamplot(
@@ -111,9 +127,9 @@ ax2.streamplot(
     arrowsize=0.5,
 )
 
-radius = magnetic_parameters["radius_magnet"]
-length = magnetic_parameters["length"]
-path = get_path(magnetic_parameters, radius, length)
+radius = magnetic_parameters["radius_magnet"] * 1e3
+length = magnetic_parameters["length"] * 1e3
+path = get_rectangle_path_xz(magnetic_parameters, radius, length)
 
 for ax in [ax1, ax2]:
     ax.add_patch(mpatches.PathPatch(path, facecolor="none", edgecolor="k"))

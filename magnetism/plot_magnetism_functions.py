@@ -1,39 +1,42 @@
 import matplotlib
 import matplotlib.patches as mpatches
-import matplotlib.path as mpath
 import matplotlib.pyplot as plt
 import numpy as np
-import plot_settings as plts
-from coordinate_transformation import (transform_coordinates_backward_magnet_x,
-                                       transform_coordinates_backward_magnet_y)
-from evaluate_magnetic_field import evaluate_magnetic_field
-from evaluate_magnetic_force import evaluate_magnetic_force
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+
+import magnetism.plot_settings as plts
+from magnetism.coordinate_transformation import (
+    get_rectangle_path_xz,
+    get_rectangle_path_yz,
+)
+from magnetism.magnetic_field import evaluate_magnetic_field
+from magnetism.magnetic_force import evaluate_magnetic_force
 
 plts.set_params()
 
 matplotlib.font_manager.findSystemFonts(fontpaths=None, fontext="ttf")
-plt.rcParams["font.sans-serif"] = "Myriad Pro"
 
-resolution = 251
+resolution = 51
 x, y, z = np.meshgrid(
-    np.linspace(-7, 7, resolution),
-    np.linspace(-7, 7, resolution),
-    np.linspace(-7, 7, resolution),
+    np.linspace(-7e-3, 7e-3, resolution),
+    np.linspace(-7e-3, 7e-3, resolution),
+    np.linspace(-7e-3, 7e-3, resolution),
     indexing="ij",
-)  # mm
+)  # m
 
 magnetic_parameters = {
-    "radius_magnet": 2.0,
-    "length": 7.0,
-    "x_position": 0.0,
-    "y_position": 0.0,
-    "z_position": 0.0,
-    "magnetic_permeability": 1.25663706212,
-    "magnetization": 1e3,
-    "dynamic_viscosity_fluid": 0.001,
-    "radius_particle": 100e-6,
-    "rotation_x": 0,
+    "radius_magnet": 2.0e-3,  # m
+    "length": 7.0e-3,  # m
+    "x_position": 0.0,  # m
+    "y_position": 0.0,  # m
+    "z_position": 0.0,  # m
+    "magnetic_permeability": 1.25663706212e-6,  # N/A^2
+    "magnetization": 1.05e6,  # A/m
+    "dynamic_viscosity_fluid": 0.001,  # Pa s
+    "radius_particle": 100e-9,  # m
+    "rotation_x": 40,
     "rotation_y": 0,
+    "magnetisation_model": "constant",
 }
 
 F_x = np.empty((resolution, resolution, resolution))
@@ -54,48 +57,54 @@ for i in range(resolution):
                 x[i, j, k], y[i, j, k], z[i, j, k], magnetic_parameters
             )
 
+# Force: N -> pN
+F_x = F_x * 1e12
+F_y = F_y * 1e12
+F_z = F_z * 1e12
+
+# H field: A/m -> kA/m = A/mm
+H_x = H_x * 1e-3
+H_y = H_y * 1e-3
+H_z = H_z * 1e-3
+
+# Position: m -> mm
+x = x * 1e3
+y = y * 1e3
+z = z * 1e3
+
 force_magnitude = np.sqrt(F_x**2 + F_y**2 + F_z**2)
 field_magnitude = np.sqrt(H_x**2 + H_y**2 + H_z**2)
 
 # Plotting
-fig1 = plt.figure()
-ax1 = fig1.add_subplot(111)
-fig2 = plt.figure()
-ax2 = fig2.add_subplot(111)
+half_width = 80 / 25.4
+fig1, ax1 = plt.subplots(1, 1, figsize=(half_width, 3.0))
+fig2, ax2 = plt.subplots(1, 1, figsize=(half_width, 3.0))
+fig3, ax3 = plt.subplots(1, 1, figsize=(half_width, 3.0))
+fig4, ax4 = plt.subplots(1, 1, figsize=(half_width, 3.0))
 
 force_levels = np.linspace(0, 1.0, 40)
-force_levels[-1] = 15
+field_levels = np.linspace(0, np.nanmax(field_magnitude), 40)
 
+# choose which slice to plot
 y_idx = int(resolution / 2)
-cp = ax1.contourf(
+contour_force_xz = ax1.contourf(
     x[:, y_idx, :],
     z[:, y_idx, :],
     force_magnitude[:, y_idx, :],
     vmin=0,
     vmax=1.0,
+    cmap="cividis",
     levels=force_levels,
     extend="max",
 )
-cp2 = ax2.contourf(
+contour_field_xz = ax2.contourf(
     x[:, y_idx, :],
     z[:, y_idx, :],
     field_magnitude[:, y_idx, :],
-    levels=np.linspace(0, np.nanmax(field_magnitude), 40),
+    cmap="plasma",
+    levels=field_levels,
+    extend="max",
 )
-for c in cp.collections:
-    c.set_edgecolor("face")
-for c in cp2.collections:
-    c.set_edgecolor("face")
-
-cbar = fig1.colorbar(cp, ax=ax1)
-cbar.set_label("Magnetic force (μN)")
-cbar.set_ticks([0, 0.5, 1])
-cbar.minorticks_on()
-cbar.solids.set_edgecolor("face")
-
-cbar2 = fig2.colorbar(cp2, ax=ax2)
-cbar2.set_label("Magnetic field H (A/mm)")
-cbar2.solids.set_edgecolor("face")
 
 ax1.streamplot(
     x[:, y_idx, :].transpose(),
@@ -103,10 +112,9 @@ ax1.streamplot(
     F_x[:, y_idx, :].transpose(),
     F_z[:, y_idx, :].transpose(),
     density=[1.5, 1.5],
-    color=force_magnitude[:, y_idx, :].transpose(),
-    cmap="YlGnBu",
-    linewidth=0.7,
-    # broken_streamlines=False,
+    color="xkcd:ivory",
+    linewidth=0.5,
+    arrowsize=0.5,
 )
 ax2.streamplot(
     x[:, y_idx, :].transpose(),
@@ -114,69 +122,14 @@ ax2.streamplot(
     H_x[:, y_idx, :].transpose(),
     H_z[:, y_idx, :].transpose(),
     density=[1, 2],
-    color=field_magnitude[:, y_idx, :].transpose(),
-    cmap="YlGnBu",
-    linewidth=1.0,
-    # broken_streamlines=False,
+    color="xkcd:ivory",
+    linewidth=0.5,
+    arrowsize=0.5,
 )
 
-
-radius = magnetic_parameters["radius_magnet"]
-length = magnetic_parameters["length"]
-verts = [
-    transform_coordinates_backward_magnet_y(
-        -radius, 0, -0.5 * length, magnetic_parameters
-    ),  # left, bottom
-    transform_coordinates_backward_magnet_y(
-        -radius, 0, 0.5 * length, magnetic_parameters
-    ),  # left, top
-    transform_coordinates_backward_magnet_y(
-        radius, 0, 0.5 * length, magnetic_parameters
-    ),  # right, top
-    transform_coordinates_backward_magnet_y(
-        radius, 0, -0.5 * length, magnetic_parameters
-    ),  # right, bottom
-    transform_coordinates_backward_magnet_y(
-        -radius, 0, -0.5 * length, magnetic_parameters
-    ),  # ignored
-]
-
-Path = mpath.Path
-codes = [
-    Path.MOVETO,
-    Path.LINETO,
-    Path.LINETO,
-    Path.LINETO,
-    Path.CLOSEPOLY,
-]
-
-path = Path(verts, codes)
-ax1.add_patch(mpatches.PathPatch(path, facecolor="none", edgecolor="tab:orange"))
-ax2.add_patch(mpatches.PathPatch(path, facecolor="none", edgecolor="tab:orange"))
-
-ax1.set_xlabel("x (mm)")
-ax1.set_ylabel("z (mm)")
-ax2.set_xlabel("x (mm)")
-ax2.set_ylabel("z (mm)")
-
-ax1.set_xlim((-7, 7))
-ax2.set_xlim((-7, 7))
-ax1.set_ylim((-7, 7))
-ax2.set_ylim((-7, 7))
-
-ax1.set_title("XZ slice")
-ax2.set_title("XZ slice")
-
-ax1.set_aspect("equal", adjustable="box")
-ax2.set_aspect("equal", adjustable="box")
-
-fig3 = plt.figure()
-ax3 = fig3.add_subplot(111)
-fig4 = plt.figure()
-ax4 = fig4.add_subplot(111)
-
+# choose which slice to plot
 x_idx = int(resolution / 2)
-cp3 = ax3.contourf(
+contour_force_yz = ax3.contourf(
     y[x_idx, :, :],
     z[x_idx, :, :],
     force_magnitude[x_idx, :, :],
@@ -185,26 +138,14 @@ cp3 = ax3.contourf(
     levels=force_levels,
     extend="max",
 )
-cp4 = ax4.contourf(
+contour_field_yz = ax4.contourf(
     y[x_idx, :, :],
     z[x_idx, :, :],
     field_magnitude[x_idx, :, :],
-    levels=np.linspace(0, np.nanmax(field_magnitude), 40),
+    cmap="plasma",
+    levels=field_levels,
+    extend="max",
 )
-for c in cp3.collections:
-    c.set_edgecolor("face")
-for c in cp4.collections:
-    c.set_edgecolor("face")
-
-cbar3 = fig3.colorbar(cp3, ax=ax3)
-cbar3.set_label("Magnetic force (μN)")
-cbar3.set_ticks([0, 0.5, 1])
-cbar3.minorticks_on()
-cbar3.solids.set_edgecolor("face")
-
-cbar4 = fig4.colorbar(cp4, ax=ax4)
-cbar4.set_label("Magnetic field H (A/mm)")
-cbar4.solids.set_edgecolor("face")
 
 ax3.streamplot(
     y[x_idx, :, :].transpose(),
@@ -212,10 +153,9 @@ ax3.streamplot(
     F_y[x_idx, :, :].transpose(),
     F_z[x_idx, :, :].transpose(),
     density=[1.5, 1.5],
-    color=force_magnitude[x_idx, :, :].transpose(),
-    cmap="YlGnBu",
-    linewidth=0.7,
-    # broken_streamlines=False,
+    color="xkcd:ivory",
+    linewidth=0.5,
+    arrowsize=0.5,
 )
 ax4.streamplot(
     y[x_idx, :, :].transpose(),
@@ -223,70 +163,75 @@ ax4.streamplot(
     H_y[x_idx, :, :].transpose(),
     H_z[x_idx, :, :].transpose(),
     density=[1, 2],
-    color=field_magnitude[x_idx, :, :].transpose(),
-    cmap="YlGnBu",
-    linewidth=1.0,
-    # broken_streamlines=False,
+    color="xkcd:ivory",
+    linewidth=0.5,
+    arrowsize=0.5,
 )
 
-radius = magnetic_parameters["radius_magnet"]
-length = magnetic_parameters["length"]
-verts = [
-    transform_coordinates_backward_magnet_x(
-        0, -radius, -0.5 * length, magnetic_parameters
-    ),  # left, bottom
-    transform_coordinates_backward_magnet_x(
-        0, -radius, 0.5 * length, magnetic_parameters
-    ),  # left, top
-    transform_coordinates_backward_magnet_x(
-        0, radius, 0.5 * length, magnetic_parameters
-    ),  # right, top
-    transform_coordinates_backward_magnet_x(
-        0, radius, -0.5 * length, magnetic_parameters
-    ),  # right, bottom
-    transform_coordinates_backward_magnet_x(
-        0, -radius, -0.5 * length, magnetic_parameters
-    ),  # ignored
-]
+# axis settings
+for ax in [ax1, ax2, ax3, ax4]:
+    ax.set_xticks([-5, 0, 5])
+    ax.set_yticks([-5, 0, 5])
+    ax.set_xlim((-7, 7))
+    ax.set_ylim((-7, 7))
+    ax.set_aspect("equal", adjustable="box")
 
-Path = mpath.Path
-codes = [
-    Path.MOVETO,
-    Path.LINETO,
-    Path.LINETO,
-    Path.LINETO,
-    Path.CLOSEPOLY,
-]
+# add magnet outline
+radius = magnetic_parameters["radius_magnet"] * 1e3
+length = magnetic_parameters["length"] * 1e3
+rectangle_xz = get_rectangle_path_xz(magnetic_parameters, radius, length)
+rectangle_yz = get_rectangle_path_yz(magnetic_parameters, radius, length)
 
-path = Path(verts, codes)
-ax3.add_patch(mpatches.PathPatch(path, facecolor="none", edgecolor="tab:orange"))
-ax4.add_patch(mpatches.PathPatch(path, facecolor="none", edgecolor="tab:orange"))
+# XZ slices
+for ax in [ax1, ax2]:
+    ax.add_patch(mpatches.PathPatch(rectangle_xz, facecolor="none", edgecolor="k"))
+    ax.set_title("XZ slice")
+    ax.set_xlabel("x (mm)")
+    ax.set_ylabel("z (mm)")
 
-ax3.set_xlabel("y (mm)")
-ax3.set_ylabel("z (mm)")
-ax4.set_xlabel("y (mm)")
-ax4.set_ylabel("z (mm)")
+# YZ slices
+for ax in [ax3, ax4]:
+    ax.add_patch(mpatches.PathPatch(rectangle_yz, facecolor="none", edgecolor="k"))
+    ax.set_title("YZ slice")
+    ax.set_xlabel("y (mm)")
+    ax.set_ylabel("z (mm)")
 
-ax3.set_xlim((-7, 7))
-ax4.set_xlim((-7, 7))
-ax3.set_ylim((-7, 7))
-ax4.set_ylim((-7, 7))
+# colorbars for force plots
+for ax, fig, contour in zip(
+    [ax1, ax3], [fig1, fig3], [contour_force_xz, contour_force_yz]
+):
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.08)
+    cbar_force = fig.colorbar(contour, ax=ax, cax=cax)
+    cbar_force.set_label("Magnetic force (pN)")
+    cbar_force.set_ticks([0, 1])
+    cbar_force.minorticks_on()
+    cbar_force.solids.set_edgecolor("face")
 
-ax3.set_title("YZ slice")
-ax4.set_title("YZ slice")
+# colorbars for field plots
+for ax, fig, contour in zip(
+    [ax2, ax4], [fig1, fig3], [contour_field_xz, contour_field_yz]
+):
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size="5%", pad=0.08)
+    cbar_field = fig.colorbar(contour, ax=ax, cax=cax)
+    cbar_field.set_label("Magnetic field H (kA/m)")
+    cbar_field.minorticks_on()
+    cbar_field.solids.set_edgecolor("face")
 
-ax3.set_aspect("equal", adjustable="box")
-ax4.set_aspect("equal", adjustable="box")
+# set tight layout
+for fig in [fig1, fig2, fig3, fig4]:
+    fig.tight_layout()
 
-fig1.tight_layout()
-fig2.tight_layout()
-fig3.tight_layout()
-fig4.tight_layout()
+# remove white lines in contour plots for pdf output
+for contour in [contour_force_xz, contour_field_xz, contour_force_yz, contour_field_yz]:
+    for c in contour.collections:
+        c.set_edgecolor("face")
 
-plt.tight_layout()
+
 plt.show()
 
-output_name = f"Magnet_centered"
+output_name = f"My_magnet"
 fig1.savefig(output_name + "_force_XZ.pdf", dpi=600)
 fig2.savefig(output_name + "_field_XZ.pdf", dpi=600)
 fig3.savefig(output_name + "_force_YZ.pdf", dpi=600)

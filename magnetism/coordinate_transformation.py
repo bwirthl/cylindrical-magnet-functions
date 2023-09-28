@@ -1,3 +1,4 @@
+import matplotlib.path as mpath
 import numpy as np
 
 
@@ -29,8 +30,8 @@ def transform_coordinates_forward(X, Y, Z, params):
     phi = np.arctan2(eta, xi)
     z = zeta
 
-    if np.abs(rho) < 1e-6:
-        rho = 1e-6
+    if np.abs(rho) < 1e-9:
+        rho = 1e-9
 
     return rho, phi, z
 
@@ -103,3 +104,67 @@ def transform_coordinates_backward_magnet_x(xi, eta, zeta, params):
     z = Z + params["z_position"]
 
     return y, z
+
+
+def get_rectangle_path_xz(magnetic_parameters, radius, length):
+    verts = [
+        transform_coordinates_backward_magnet_y(
+            -radius, 0, -0.5 * length, magnetic_parameters
+        ),  # left, bottom
+        transform_coordinates_backward_magnet_y(
+            -radius, 0, 0.5 * length, magnetic_parameters
+        ),  # left, top
+        transform_coordinates_backward_magnet_y(
+            radius, 0, 0.5 * length, magnetic_parameters
+        ),  # right, top
+        transform_coordinates_backward_magnet_y(
+            radius, 0, -0.5 * length, magnetic_parameters
+        ),  # right, bottom
+        transform_coordinates_backward_magnet_y(
+            -radius, 0, -0.5 * length, magnetic_parameters
+        ),  # ignored
+    ]
+
+    Path = mpath.Path
+    codes = [
+        Path.MOVETO,
+        Path.LINETO,
+        Path.LINETO,
+        Path.LINETO,
+        Path.CLOSEPOLY,
+    ]
+
+    path = Path(verts, codes)
+    return path
+
+
+def get_rectangle_path_yz(magnetic_parameters, radius, length):
+    verts = [
+        transform_coordinates_backward_magnet_x(
+            0, -radius, -0.5 * length, magnetic_parameters
+        ),  # left, bottom
+        transform_coordinates_backward_magnet_x(
+            0, -radius, 0.5 * length, magnetic_parameters
+        ),  # left, top
+        transform_coordinates_backward_magnet_x(
+            0, radius, 0.5 * length, magnetic_parameters
+        ),  # right, top
+        transform_coordinates_backward_magnet_x(
+            0, radius, -0.5 * length, magnetic_parameters
+        ),  # right, bottom
+        transform_coordinates_backward_magnet_x(
+            0, -radius, -0.5 * length, magnetic_parameters
+        ),  # ignored
+    ]
+
+    Path = mpath.Path
+    codes = [
+        Path.MOVETO,
+        Path.LINETO,
+        Path.LINETO,
+        Path.LINETO,
+        Path.CLOSEPOLY,
+    ]
+
+    path = Path(verts, codes)
+    return path

@@ -5,9 +5,11 @@ from magnetism.coordinate_transformation import (
     transform_vector_backward,
 )
 from magnetism.elliptic_integrals import EllipticE, EllipticK, EllipticPi
+from magnetism.magnetic_field import evaluate_magnetic_field
+from magnetism.magnetisation_model import evaluate_magnetisation_model
 
 
-def evaluate_magnetic_force(x, y, z, magnetic_parameters):
+def evaluate_magnetic_force(x, y, z, magnetic_parameters, magnetic_volume=None):
     """
     Evaluate the magnetic force at a given point in space.
     """
@@ -18,15 +20,10 @@ def evaluate_magnetic_force(x, y, z, magnetic_parameters):
     R = magnetic_parameters["radius_magnet"]
     half_length = 0.5 * magnetic_parameters["length"]
 
-    mobility = np.power(
-        6
-        * np.pi
-        * magnetic_parameters["dynamic_viscosity_fluid"]
-        * magnetic_parameters["radius_particle"],
-        -1.0,
-    )
-    volume_particle = (
-        (4 / 3) * np.pi * np.power(magnetic_parameters["radius_particle"], 3)
+    H_x, H_y, H_z = evaluate_magnetic_field(x, y, z, magnetic_parameters)
+    H_magnitude = np.sqrt(H_x**2 + H_y**2 + H_z**2)
+    f_H = evaluate_magnetisation_model(
+        magnetic_parameters, H_magnitude, magnetic_volume
     )
 
     # calculate the auxiliary variables
@@ -75,10 +72,9 @@ def evaluate_magnetic_force(x, y, z, magnetic_parameters):
 
     # calculate the magnetic force in cylindrical coordinates
     F_rho = (
-        mobility
-        * magnetic_parameters["magnetization"] ** 2
+        magnetic_parameters["magnetization"] ** 2
         * magnetic_parameters["magnetic_permeability"]
-        * volume_particle
+        * f_H
         * (
             rho**2
             * Q_2
@@ -100,10 +96,9 @@ def evaluate_magnetic_force(x, y, z, magnetic_parameters):
     ) / (4.0 * np.pi**2 * rho**3 * rho_p * a_4 * a_2 * a_3 * a_1)
 
     F_z = (
-        mobility
-        * magnetic_parameters["magnetization"] ** 2
+        magnetic_parameters["magnetization"] ** 2
         * magnetic_parameters["magnetic_permeability"]
-        * volume_particle
+        * f_H
         * (
             (Q_1 / rho**2)
             * (

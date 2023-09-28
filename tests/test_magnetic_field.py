@@ -1,6 +1,5 @@
 import pytest
-
-from magnetism.evaluate_magnetic_field import evaluate_magnetic_field
+from magnetism.magnetic_field import evaluate_magnetic_field
 
 # base units are: mm, s, g, A
 # 1 N = 1 kg m/s^2 = 1e6 g mm/s^2
